@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDS Attendance - Corpers Portal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; color: white; }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        .card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.2); }
+        h1 { text-align: center; margin-bottom: 10px; font-size: 24px; }
+        .subtitle { text-align: center; opacity: 0.8; margin-bottom: 30px; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; border: none; border-radius: 10px; background: rgba(255,255,255,0.9); color: #333; font-size: 16px; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 10px; background: #00d4aa; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+        button:hover { transform: translateY(-2px); background: #00b894; }
+        button:disabled { background: #636e72; cursor: not-allowed; transform: none; }
+        .error { color: #ff6b6b; font-size: 14px; margin-top: 5px; display: none; }
+        .success { color: #00d4aa; font-size: 14px; margin-top: 5px; }
+        .hidden { display: none; }
+        .qr-container { text-align: center; margin: 20px 0; background: white; padding: 20px; border-radius: 10px; }
+        .attendance-number { font-size: 48px; font-weight: bold; color: #00d4aa; text-align: center; margin: 20px 0; text-shadow: 0 0 20px rgba(0,212,170,0.5); }
+        .status-badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .status-pending { background: #ffeaa7; color: #d63031; }
+        .status-present { background: #00d4aa; color: white; }
+        .location-status { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .distance { font-size: 24px; font-weight: bold; color: #00d4aa; }
+        .tabs { display: flex; margin-bottom: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 5px; }
+        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 8px; transition: all 0.3s; }
+        .tab.active { background: rgba(255,255,255,0.2); font-weight: bold; }
+        .toggle-link { text-align: center; margin-top: 20px; opacity: 0.8; cursor: pointer; text-decoration: underline; }
+        .corper-id { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; font-family: monospace; text-align: center; margin: 10px 0; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇳🇬 CDS Attendance System</h1>
+        <p class="subtitle">Corpers Digital Verification Portal</p>
+
+        <!-- Registration View -->
+        <div id="registerView" class="card">
+            <h2 style="margin-bottom: 20px;">Corper Registration</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Full Name (Surname First)</label>
+                    <input type="text" id="regName" required placeholder="e.g., ADELEKE JOHN OLUWASEUN">
+                </div>
+                <div class="form-group">
+                    <label>State Code</label>
+                    <input type="text" id="regCode" required placeholder="e.g., LA/23A/1234">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="regEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="regPhone" required placeholder="08012345678">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="regPassword" required placeholder="Create a secure password">
+                </div>
+                <div class="form-group">
+                    <label>Select Your CDS Local Government</label>
+                    <select id="regLGA" required>
+                        <option value="">-- Select LGA --</option>
+                        <option value="Agege" data-lat="6.621830" data-lng="3.323590">Agege</option>
+                        <option value="Ajeromi-Ifelodun" data-lat="6.455000" data-lng="3.335830">Ajeromi-Ifelodun</option>
+                        <option value="Alimosho" data-lat="6.664440" data-lng="3.290280">Alimosho</option>
+                        <option value="Amuwo-Odofin" data-lat="6.433330" data-lng="3.300000">Amuwo-Odofin</option>
+                        <option value="Apapa" data-lat="6.448800" data-lng="3.358900">Apapa</option>
+                        <option value="Badagry" data-lat="6.416670" data-lng="2.883330">Badagry</option>
+                        <option value="Epe" data-lat="6.583330" data-lng="3.983330">Epe</option>
+                        <option value="Eti-Osa" data-lat="6.433330" data-lng="3.466670">Eti-Osa</option>
+                        <option value="Ibeju-Lekki" data-lat="6.466670" data-lng="3.600000">Ibeju-Lekki</option>
+                        <option value="Ifako-Ijaiye" data-lat="6.666670" data-lng="3.300000">Ifako-Ijaiye</option>
+                        <option value="Ikeja" data-lat="6.596510" data-lng="3.342050">Ikeja</option>
+                        <option value="Ikorodu" data-lat="6.600000" data-lng="3.500000">Ikorodu</option>
+                        <option value="Kosofe" data-lat="6.616670" data-lng="3.400000">Kosofe</option>
+                        <option value="Lagos Island" data-lat="6.450000" data-lng="3.400000">Lagos Island</option>
+                        <option value="Lagos Mainland" data-lat="6.500000" data-lng="3.350000">Lagos Mainland</option>
+                        <option value="Mushin" data-lat="6.533330" data-lng="3.350000">Mushin</option>
+                        <option value="Ojo" data-lat="6.466670" data-lng="3.166670">Ojo</option>
+                        <option value="Oshodi-Isolo" data-lat="6.550000" data-lng="3.350000">Oshodi-Isolo</option>
+                        <option value="Shomolu" data-lat="6.533330" data-lng="3.383330">Shomolu</option>
+                        <option value="Surulere" data-lat="6.500000" data-lng="3.350000">Surulere</option>
+                    </select>
+                </div>
+                <button type="submit">Complete Registration</button>
+                <div class="toggle-link" onclick="showLogin()">Already registered? Login here</div>
+            </form>
+        </div>
+
+        <!-- Login View -->
+        <div id="loginView" class="card hidden">
+            <h2 style="margin-bottom: 20px;">Corper Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>State Code or Email</label>
+                    <input type="text" id="loginId" required placeholder="LA/23A/1234">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" id="loginBtn">Verify Location & Login</button>
+                <div class="toggle-link" onclick="showRegister()">New corper? Register here</div>
+            </form>
+        </div>
+
+        <!-- Location Verification View -->
+        <div id="locationView" class="card hidden">
+            <h2 style="margin-bottom: 20px;">Location Verification</h2>
+            <div class="location-status">
+                <div id="locStatus">Detecting your location...</div>
+                <div class="distance" id="distanceDisplay">--</div>
+                <div id="locMessage">Please enable GPS and wait</div>
+            </div>
+            <button id="refreshLoc" onclick="checkLocation()">Refresh Location</button>
+            <button id="proceedBtn" class="hidden" onclick="proceedToDashboard()" style="margin-top: 10px; background: #00d4aa;">Proceed to Dashboard</button>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboardView" class="card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>My Attendance</h2>
+                <span id="attendanceStatus" class="status-badge status-pending">Pending</span>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 14px; opacity: 0.8;">Your Attendance Number</div>
+                <div class="attendance-number" id="attNumber">--</div>
+                <div style="font-size: 12px; opacity: 0.6;">Show this QR to your LGI</div>
+            </div>
+
+            <div class="qr-container">
+                <div id="qrcode"></div>
+            </div>
+
+            <div class="corper-id" id="corperIdDisplay"></div>
+
+            <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; font-size: 14px;">
+                <strong>LGA:</strong> <span id="userLGA"></span><br>
+                <strong>State Code:</strong> <span id="userCode"></span><br>
+                <strong>Last Updated:</strong> <span id="lastUpdated"></span>
+            </div>
+
+            <button onclick="logout()" style="margin-top: 20px; background: #e74c3c;">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let currentUser = null;
+        let targetLocation = null;
+        let attendanceNumber = null;
+
+        // Lagos LGAs with approximate coordinates (CDS meeting points)
+        const lgaLocations = {
+            "Agege": { lat: 6.621830, lng: 3.323590 },
+            "Ajeromi-Ifelodun": { lat: 6.455000, lng: 3.335830 },
+            "Alimosho": { lat: 6.664440, lng: 3.290280 },
+            "Amuwo-Odofin": { lat: 6.433330, lng: 3.300000 },
+            "Apapa": { lat: 6.448800, lng: 3.358900 },
+            "Badagry": { lat: 6.416670, lng: 2.883330 },
+            "Epe": { lat: 6.583330, lng: 3.983330 },
+            "Eti-Osa": { lat: 6.433330, lng: 3.466670 },
+            "Ibeju-Lekki": { lat: 6.466670, lng: 3.600000 },
+            "Ifako-Ijaiye": { lat: 6.666670, lng: 3.300000 },
+            "Ikeja": { lat: 6.596510, lng: 3.342050 },
+            "Ikorodu": { lat: 6.600000, lng: 3.500000 },
+            "Kosofe": { lat: 6.616670, lng: 3.400000 },
+            "Lagos Island": { lat: 6.450000, lng: 3.400000 },
+            "Lagos Mainland": { lat: 6.500000, lng: 3.350000 },
+            "Mushin": { lat: 6.533330, lng: 3.350000 },
+            "Ojo": { lat: 6.466670, lng: 3.166670 },
+            "Oshodi-Isolo": { lat: 6.550000, lng: 3.350000 },
+            "Shomolu": { lat: 6.533330, lng: 3.383330 },
+            "Surulere": { lat: 6.500000, lng: 3.350000 }
+        };
+
+        // View Management
+        function showRegister() {
+            document.getElementById('registerView').classList.remove('hidden');
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('locationView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('registerView').classList.add('hidden');
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('locationView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+        }
+
+        function showLocation() {
+            document.getElementById('registerView').classList.add('hidden');
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('locationView').classList.remove('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+            checkLocation();
+        }
+
+        function showDashboard() {
+            document.getElementById('registerView').classList.add('hidden');
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('locationView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.remove('hidden');
+            generateAttendanceCode();
+        }
+
+        // Registration Handler
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const lgaSelect = document.getElementById('regLGA');
+            const selectedLGA = lgaSelect.value;
+            
+            if (!selectedLGA) {
+                alert('Please select your LGA');
+                return;
+            }
+
+            const userData = {
+                name: document.getElementById('regName').value,
+                stateCode: document.getElementById('regCode').value.toUpperCase(),
+                email: document.getElementById('regEmail').value,
+                phone: document.getElementById('regPhone').value,
+                password: document.getElementById('regPassword').value,
+                lga: selectedLGA,
+                lgaLat: parseFloat(lgaSelect.options[lgaSelect.selectedIndex].dataset.lat),
+                lgaLng: parseFloat(lgaSelect.options[lgaSelect.selectedIndex].dataset.lng),
+                registeredAt: new Date().toISOString()
+            };
+
+            // Store in localStorage (simulating database)
+            let users = JSON.parse(localStorage.getItem('corpers') || '[]');
+            
+            // Check if exists
+            if (users.find(u => u.stateCode === userData.stateCode || u.email === userData.email)) {
+                alert('User with this State Code or Email already exists!');
+                return;
+            }
+
+            users.push(userData);
+            localStorage.setItem('corpers', JSON.stringify(users));
+            
+            alert('Registration successful! Please login.');
+            showLogin();
+        });
+
+        // Login Handler
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const loginId = document.getElementById('loginId').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            let users = JSON.parse(localStorage.getItem('corpers') || '[]');
+            const user = users.find(u => 
+                (u.stateCode === loginId.toUpperCase() || u.email === loginId) && 
+                u.password === password
+            );
+
+            if (!user) {
+                alert('Invalid credentials!');
+                return;
+            }
+
+            currentUser = user;
+            targetLocation = { lat: user.lgaLat, lng: user.lgaLng };
+            
+            // Store session
+            sessionStorage.setItem('currentCorper', JSON.stringify(user));
+            
+            showLocation();
+        });
+
+        // Geolocation Logic
+        function checkLocation() {
+            const statusDiv = document.getElementById('locStatus');
+            const distanceDiv = document.getElementById('distanceDisplay');
+            const messageDiv = document.getElementById('locMessage');
+            const proceedBtn = document.getElementById('proceedBtn');
+            const refreshBtn = document.getElementById('refreshLoc');
+
+            statusDiv.textContent = 'Locating you...';
+            distanceDiv.textContent = '--';
+            messageDiv.textContent = 'Please wait while we verify your GPS location';
+            proceedBtn.classList.add('hidden');
+            refreshBtn.disabled = true;
+
+            if (!navigator.geolocation) {
+                statusDiv.textContent = 'GPS Not Supported';
+                messageDiv.textContent = 'Your browser does not support geolocation';
+                refreshBtn.disabled = false;
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    
+                    const distance = calculateDistance(userLat, userLng, targetLocation.lat, targetLocation.lng);
+                    const distanceMeters = Math.round(distance * 1000);
+                    
+                    distanceDiv.textContent = distanceMeters + 'm away';
+                    
+                    if (distanceMeters <= 50) {
+                        statusDiv.textContent = '✓ Location Verified';
+                        statusDiv.style.color = '#00d4aa';
+                        messageDiv.textContent = 'You are within the CDS meeting area. You may proceed.';
+                        proceedBtn.classList.remove('hidden');
+                        refreshBtn.classList.add('hidden');
+                    } else {
+                        statusDiv.textContent = '✗ Too Far';
+                        statusDiv.style.color = '#ff6b6b';
+                        messageDiv.textContent = `You must be within 50 meters of ${currentUser.lga} CDS venue. Current distance: ${distanceMeters}m`;
+                        proceedBtn.classList.add('hidden');
+                        refreshBtn.disabled = false;
+                    }
+                },
+                (error) => {
+                    statusDiv.textContent = 'Location Error';
+                    messageDiv.textContent = 'Error: ' + error.message + '. Please enable location permissions.';
+                    refreshBtn.disabled = false;
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // Distance in km
+        }
+
+        function proceedToDashboard() {
+            showDashboard();
+        }
+
+        // Dashboard Logic
+        function generateAttendanceCode() {
+            if (!currentUser) currentUser = JSON.parse(sessionStorage.getItem('currentCorper'));
+            
+            // Generate deterministic attendance number based on state code and date
+            const today = new Date().toDateString();
+            const hash = stringToHash(currentUser.stateCode + today);
+            attendanceNumber = Math.abs(hash % 9000) + 1000; // 4-digit number
+            
+            document.getElementById('attNumber').textContent = attendanceNumber;
+            document.getElementById('userLGA').textContent = currentUser.lga;
+            document.getElementById('userCode').textContent = currentUser.stateCode;
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+            
+            // Generate QR Code containing encrypted data
+            const qrData = JSON.stringify({
+                type: 'CDS_ATTENDANCE',
+                stateCode: currentUser.stateCode,
+                name: currentUser.name,
+                lga: currentUser.lga,
+                number: attendanceNumber,
+                timestamp: new Date().toISOString(),
+                token: btoa(currentUser.stateCode + attendanceNumber + today).substring(0, 20)
+            });
+            
+            document.getElementById('corperIdDisplay').textContent = 'ID: ' + btoa(qrData).substring(0, 32) + '...';
+            
+            // Clear previous QR
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            // Generate new QR
+            new QRCode(qrContainer, {
+                text: qrData,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Simulate checking attendance status periodically
+            checkAttendanceStatus();
+        }
+
+        function stringToHash(string) {
+            let hash = 0;
+            if (string.length == 0) return hash;
+            for (let i = 0; i < string.length; i++) {
+                let char = string.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash;
+        }
+
+        function checkAttendanceStatus() {
+            // In real implementation, this would poll the server
+            // For demo, we'll simulate random marking after 10 seconds
+            setTimeout(() => {
+                if (Math.random() > 0.5) { // Simulate 50% chance of being marked present
+                    document.getElementById('attendanceStatus').textContent = 'Present';
+                    document.getElementById('attendanceStatus').classList.remove('status-pending');
+                    document.getElementById('attendanceStatus').classList.add('status-present');
+                }
+            }, 10000);
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentCorper');
+            currentUser = null;
+            showLogin();
+        }
+
+        // Check for existing session on load
+        window.onload = function() {
+            const saved = sessionStorage.getItem('currentCorper');
+            if (saved) {
+                currentUser = JSON.parse(saved);
+                targetLocation = { lat: currentUser.lgaLat, lng: currentUser.lgaLng };
+                showLocation();
+            }
+        };
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDS Attendance - Corpers Portal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; color: white; }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        .card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.2); }
+        h1 { text-align: center; margin-bottom: 10px; font-size: 24px; }
+        .subtitle { text-align: center; opacity: 0.8; margin-bottom: 30px; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; border: none; border-radius: 10px; background: rgba(255,255,255,0.9); color: #333; font-size: 16px; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 10px; background: #00d4aa; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+        button:hover { transform: translateY(-2px); background: #00b894; }
+        button:disabled { background: #636e72; cursor: not-allowed; transform: none; }
+        .error { color: #ff6b6b; font-size: 14px; margin-top: 5px; display: none; }
+        .success { color: #00d4aa; font-size: 14px; margin-top: 5px; }
+        .hidden { display: none; }
+        .qr-container { text-align: center; margin: 20px 0; background: white; padding: 20px; border-radius: 10px; }
+        .attendance-number { font-size: 48px; font-weight: bold; color: #00d4aa; text-align: center; margin: 20px 0; text-shadow: 0 0 20px rgba(0,212,170,0.5); }
+        .status-badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .status-pending { background: #ffeaa7; color: #d63031; }
+        .status-present { background: #00d4aa; color: white; }
+        .location-status { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .distance { font-size: 24px; font-weight: bold; color: #00d4aa; }
+        .tabs { display: flex; margin-bottom: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 5px; }
+        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 8px; transition: all 0.3s; }
+        .tab.active { background: rgba(255,255,255,0.2); font-weight: bold; }
+        .toggle-link { text-align: center; margin-top: 20px; opacity: 0.8; cursor: pointer; text-decoration: underline; }
+        .corper-id { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; font-family: monospace; text-align: center; margin: 10px 0; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇳🇬 CDS Attendance System</h1>
+        <p class="subtitle">Corpers Digital Verification Portal</p>
+
+        <!-- Registration View -->
+        <div id="registerView" class="card">
+            <h2 style="margin-bottom: 20px;">Corper Registration</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Full Name (Surname First)</label>
+                    <input type="text" id="regName" required placeholder="e.g., ADELEKE JOHN OLUWASEUN">
+                </div>
+                <div class="form-group">
+                    <label>State Code</label>
+                    <input type="text" id="regCode" required placeholder="e.g., LA/23A/1234">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="regEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="regPhone" required placeholder="08012345678">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="regPassword" required placeholder="Create a secure password">
+                </div>
+                <div class="form-group">
+                    <label>Select Your CDS Local Government</label>
+                    <select id="regLGA" required>
+                        <option value="">-- Select LGA --</option>
+                        <option value="Agege" data-lat="6.621830" data-lng="3.323590">Agege</option>
+                        <option value="Ajeromi-Ifelodun" data-lat="6.455000" data-lng="3.335830">Ajeromi-Ifelodun</option>
+                        <option value="Alimosho" data-lat="6.664440" data-lng="3.290280">Alimosho</option>
+                        <option value="Amuwo-Odofin" data-lat="6.433330" data-lng="3.300000">Amuwo-Odofin</option>
+                        <option value="Apapa" data-lat="6.448800" data-lng="3.358900">Apapa</option>
+                        <option value="Badagry" data-lat="6.416670" data-lng="2.883330">Badagry</option>
+                        <option value="Epe" data-lat="6.583330" data-lng="3.983330">Epe</option>
+                        <option value="Eti-Osa" data-lat="6.433330" data-lng="3.466670">Eti-Osa</option>
+                        <option value="Ibeju-Lekki" data-lat="6.466670" data-lng="3.600000">Ibeju-Lekki</option>
+                        <option value="Ifako-Ijaiye" data-lat="6.666670" data-lng="3.300000">Ifako-Ijaiye</option>
+                        <option value="Ikeja" data-lat="6.596510" data-lng="3.342050">Ikeja</option>
+                        <option value="Ikorodu" data-lat="6.600000" data-lng="3.500000">Ikorodu</option>
+                        <option value="Kosofe" data-lat="6.616670" data-lng="3.400000">Kosofe</option>
+                        <option value="Lagos Island" data-lat="6.450000" data-lng="3.400000">Lagos Island</option>
+                        <option value="Lagos Mainland" data-lat="6.500000" data-lng="3.350000">Lagos Mainland</option>
+                        <option value="Mushin" data-lat="6.533330" data-lng="3.350000">Mushin</option>
+                        <option value="Ojo" data-lat="6.466670" data-lng="3.166670">Ojo</option>
+                        <option value="Oshodi-Isolo" data-lat="6.550000" data-lng="3.350000">Oshodi-Isolo</option>
+                        <option value="Shomolu" data-lat="6.533330" data-lng="3.383330">Shomolu</option>
+                        <option value="Surulere" data-lat="6.500000" data-lng="3.350000">Surulere</option>
+                    </select>
+                </div>
+                <button type="submit">Complete Registration</button>
+                <div class="toggle-link" onclick="showLogin()">Already registered? Login here</div>
+            </form>
+        </div>
+
+        <!-- Login View -->
+        <div id="loginView" class="card hidden">
+            <h2 style="margin-bottom: 20px;">Corper Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>State Code or Email</label>
+                    <input type="text" id="loginId" required placeholder="LA/23A/1234">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" id="loginBtn">Verify Location & Login</button>
+                <div class="toggle-link" onclick="showRegister()">New corper? Register here</div>
+            </form>
+        </div>
+
+        <!-- Location Verification View -->
+        <div id="locationView" class="card hidden">
+            <h2 style="margin-bottom: 20px;">Location Verification</h2>
+            <div class="location-status">
+                <div id="locStatus">Detecting your location...</div>
+                <div class="distance" id="distanceDisplay">--</div>
+                <div id="locMessage">Please enable GPS and wait</div>
+            </div>
+            <button id="refreshLoc" onclick="checkLocation()">Refresh Location</button>
+            <button id="proceedBtn" class="hidden" onclick="proceedToDashboard()" style="margin-top: 10px; background: #00d4aa;">Proceed to Dashboard</button>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboardView" class="card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>My Attendance</h2>
+                <span id="attendanceStatus" class="status-badge status-pending">Pending</span>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 14px; opacity: 0.8;">Your Attendance Number</div>
+                <div class="attendance-number" id="attNumber">--</div>
+                <div style="font-size: 12px; opacity: 0.6;">Show this QR to your LGI</div>
+            </div>
+
+            <div class="qr-container">
+                <div id="qrcode"></div>
+            </div>
+
+            <div class="corper-id" id="corperIdDisplay"></div>
+
+            <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; font-size: 14px;">
+                <strong>LGA:</strong> <span id="userLGA"></span><br>
+                <strong>State Code:</strong> <span id="userCode"></span><br>
+                <strong>Last Updated:</strong> <span id="lastUpdated"></span>
+            </div>
+
+            <button onclick="logout()" style="margin-top: 20px; background: #e74c3c;">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let currentUser = null;
+        let targetLocation = null;
+        let attendanceNumber = null;
+
+        // Lagos LGAs with approximate coordinates (CDS meeting points)
+        const lgaLocations = {
+            "Agege": { lat: 6.621830, lng: 3.323590 },
+            "Ajeromi-Ifelodun": { lat: 6.455000, lng: 3.335830 },
+            "Alimosho": { lat: 6.664440, lng: 3.290280 },
+            "Amuwo-Odofin": { lat: 6.433330, lng: 3.300000 },
+            "Apapa": { lat: 6.448800, lng: 3.358900 },
+            "Badagry": { lat: 6.416670, lng: 2.883330 },
+            "Epe": { lat: 6.583330, lng: 3.983330 },
+            "Eti-Osa": { lat: 6.433330, lng: 3.466670 },
+            "Ibeju-Lekki": { lat: 6.466670, lng: 3.600000 },
+            "Ifako-Ijaiye": { lat: 6.666670, lng: 3.300000 },
+            "Ikeja": { lat: 6.596510, lng: 3.342050 },
+            "Ikorodu": { lat: 6.600000, lng: 3.500000 },
+            "Kosofe": { lat: 6.616670, lng: 3.400000 },
+            "Lagos Island": { lat: 6.450000, lng: 3.400000 },
+            "Lagos Mainland": { lat: 6.500000, lng: 3.350000 },
+            "Mushin": { lat: 6.533330, lng: 3.350000 },
+            "Ojo": { lat: 6.466670, lng: 3.166670 },
+            "Oshodi-Isolo": { lat: 6.550000, lng: 3.350000 },
+            "Shomolu": { lat: 6.533330, lng: 3.383330 },
+            "Surulere": { lat: 6.500000, lng: 3.350000 }
+        };
+
+        // View Management
+        function showRegister() {
+            document.getElementById('registerView').classList.remove('hidden');
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('locationView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('registerView').classList.add('hidden');
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('locationView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+        }
+
+        function showLocation() {
+            document.getElementById('registerView').classList.add('hidden');
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('locationView').classList.remove('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+            checkLocation();
+        }
+
+        function showDashboard() {
+            document.getElementById('registerView').classList.add('hidden');
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('locationView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.remove('hidden');
+            generateAttendanceCode();
+        }
+
+        // Registration Handler
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const lgaSelect = document.getElementById('regLGA');
+            const selectedLGA = lgaSelect.value;
+            
+            if (!selectedLGA) {
+                alert('Please select your LGA');
+                return;
+            }
+
+            const userData = {
+                name: document.getElementById('regName').value,
+                stateCode: document.getElementById('regCode').value.toUpperCase(),
+                email: document.getElementById('regEmail').value,
+                phone: document.getElementById('regPhone').value,
+                password: document.getElementById('regPassword').value,
+                lga: selectedLGA,
+                lgaLat: parseFloat(lgaSelect.options[lgaSelect.selectedIndex].dataset.lat),
+                lgaLng: parseFloat(lgaSelect.options[lgaSelect.selectedIndex].dataset.lng),
+                registeredAt: new Date().toISOString()
+            };
+
+            // Store in localStorage (simulating database)
+            let users = JSON.parse(localStorage.getItem('corpers') || '[]');
+            
+            // Check if exists
+            if (users.find(u => u.stateCode === userData.stateCode || u.email === userData.email)) {
+                alert('User with this State Code or Email already exists!');
+                return;
+            }
+
+            users.push(userData);
+            localStorage.setItem('corpers', JSON.stringify(users));
+            
+            alert('Registration successful! Please login.');
+            showLogin();
+        });
+
+        // Login Handler
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const loginId = document.getElementById('loginId').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            let users = JSON.parse(localStorage.getItem('corpers') || '[]');
+            const user = users.find(u => 
+                (u.stateCode === loginId.toUpperCase() || u.email === loginId) && 
+                u.password === password
+            );
+
+            if (!user) {
+                alert('Invalid credentials!');
+                return;
+            }
+
+            currentUser = user;
+            targetLocation = { lat: user.lgaLat, lng: user.lgaLng };
+            
+            // Store session
+            sessionStorage.setItem('currentCorper', JSON.stringify(user));
+            
+            showLocation();
+        });
+
+        // Geolocation Logic
+        function checkLocation() {
+            const statusDiv = document.getElementById('locStatus');
+            const distanceDiv = document.getElementById('distanceDisplay');
+            const messageDiv = document.getElementById('locMessage');
+            const proceedBtn = document.getElementById('proceedBtn');
+            const refreshBtn = document.getElementById('refreshLoc');
+
+            statusDiv.textContent = 'Locating you...';
+            distanceDiv.textContent = '--';
+            messageDiv.textContent = 'Please wait while we verify your GPS location';
+            proceedBtn.classList.add('hidden');
+            refreshBtn.disabled = true;
+
+            if (!navigator.geolocation) {
+                statusDiv.textContent = 'GPS Not Supported';
+                messageDiv.textContent = 'Your browser does not support geolocation';
+                refreshBtn.disabled = false;
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    
+                    const distance = calculateDistance(userLat, userLng, targetLocation.lat, targetLocation.lng);
+                    const distanceMeters = Math.round(distance * 1000);
+                    
+                    distanceDiv.textContent = distanceMeters + 'm away';
+                    
+                    if (distanceMeters <= 50) {
+                        statusDiv.textContent = '✓ Location Verified';
+                        statusDiv.style.color = '#00d4aa';
+                        messageDiv.textContent = 'You are within the CDS meeting area. You may proceed.';
+                        proceedBtn.classList.remove('hidden');
+                        refreshBtn.classList.add('hidden');
+                    } else {
+                        statusDiv.textContent = '✗ Too Far';
+                        statusDiv.style.color = '#ff6b6b';
+                        messageDiv.textContent = `You must be within 50 meters of ${currentUser.lga} CDS venue. Current distance: ${distanceMeters}m`;
+                        proceedBtn.classList.add('hidden');
+                        refreshBtn.disabled = false;
+                    }
+                },
+                (error) => {
+                    statusDiv.textContent = 'Location Error';
+                    messageDiv.textContent = 'Error: ' + error.message + '. Please enable location permissions.';
+                    refreshBtn.disabled = false;
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // Distance in km
+        }
+
+        function proceedToDashboard() {
+            showDashboard();
+        }
+
+        // Dashboard Logic
+        function generateAttendanceCode() {
+            if (!currentUser) currentUser = JSON.parse(sessionStorage.getItem('currentCorper'));
+            
+            // Generate deterministic attendance number based on state code and date
+            const today = new Date().toDateString();
+            const hash = stringToHash(currentUser.stateCode + today);
+            attendanceNumber = Math.abs(hash % 9000) + 1000; // 4-digit number
+            
+            document.getElementById('attNumber').textContent = attendanceNumber;
+            document.getElementById('userLGA').textContent = currentUser.lga;
+            document.getElementById('userCode').textContent = currentUser.stateCode;
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+            
+            // Generate QR Code containing encrypted data
+            const qrData = JSON.stringify({
+                type: 'CDS_ATTENDANCE',
+                stateCode: currentUser.stateCode,
+                name: currentUser.name,
+                lga: currentUser.lga,
+                number: attendanceNumber,
+                timestamp: new Date().toISOString(),
+                token: btoa(currentUser.stateCode + attendanceNumber + today).substring(0, 20)
+            });
+            
+            document.getElementById('corperIdDisplay').textContent = 'ID: ' + btoa(qrData).substring(0, 32) + '...';
+            
+            // Clear previous QR
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            // Generate new QR
+            new QRCode(qrContainer, {
+                text: qrData,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Simulate checking attendance status periodically
+            checkAttendanceStatus();
+        }
+
+        function stringToHash(string) {
+            let hash = 0;
+            if (string.length == 0) return hash;
+            for (let i = 0; i < string.length; i++) {
+                let char = string.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash;
+        }
+
+        function checkAttendanceStatus() {
+            // In real implementation, this would poll the server
+            // For demo, we'll simulate random marking after 10 seconds
+            setTimeout(() => {
+                if (Math.random() > 0.5) { // Simulate 50% chance of being marked present
+                    document.getElementById('attendanceStatus').textContent = 'Present';
+                    document.getElementById('attendanceStatus').classList.remove('status-pending');
+                    document.getElementById('attendanceStatus').classList.add('status-present');
+                }
+            }, 10000);
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentCorper');
+            currentUser = null;
+            showLogin();
+        }
+
+        // Check for existing session on load
+        window.onload = function() {
+            const saved = sessionStorage.getItem('currentCorper');
+            if (saved) {
+                currentUser = JSON.parse(saved);
+                targetLocation = { lat: currentUser.lgaLat, lng: currentUser.lgaLng };
+                showLocation();
+            }
+        };
+    </script>
+</body>
+</html>
